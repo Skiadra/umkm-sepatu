@@ -9,7 +9,7 @@ use App\Models\Product;
 use App\Models\User;
 use App\Models\Order;
 use App\Models\ProductVariant;
-use ArielMejiaDev\LarapexCharts\LarapexChart;
+// use ArielMejiaDev\LarapexCharts\LarapexChart;
 use Carbon\Carbon;
 use Exception;
 
@@ -17,111 +17,111 @@ class AdminController extends Controller
 {
     private $columnCommands = ['waktu_order' => "created_at", 'nomor_id' => 'id', 'status' => 'status', 'kuantitas' => 'quantity', 'harga' => 'price', 'nama_produk' => 'name'];
 
-    public function dashboard(Request $request)
-    {
-        $product = Product::all();
-        $user = User::all();
-        $sortRequest = $request->sort;
-        $sortDirection = $request->direction;
-        $chartType = $request->chart_type ?? 'status';
+    // public function dashboard(Request $request)
+    // {
+    //     $product = Product::all();
+    //     $user = User::all();
+    //     $sortRequest = $request->sort;
+    //     $sortDirection = $request->direction;
+    //     $chartType = $request->chart_type ?? 'status';
 
-        if ($sortRequest == null || !in_array($sortRequest, array_keys($this->columnCommands))) {
-            // Default sorting
-            $recentOrders = Order::with(['items' => function ($query) {
-                $query->orderBy($this->columnCommands['waktu_order'], 'desc');
-            }])->paginate(6);
-        } else {
-            try {
-                if ($sortRequest == 'kuantitas') {
-                    $recentOrders = Order::with(['items'])
-                        ->select('orders.*', \DB::raw('SUM(order_items.quantity) as total_quantity'))
-                        ->join('order_items', 'orders.id', '=', 'order_items.order_id')
-                        ->groupBy('orders.id')
-                        ->orderBy('total_quantity', $sortDirection)
-                        ->paginate(6);
-                } else if ($sortRequest == 'status') {
-                    $recentOrders = Order::with(['items'])
-                        ->orderBy($this->columnCommands[$sortRequest], $sortDirection)
-                        ->paginate(6);
-                } else {
-                    $recentOrders = Order::with(['items' => function ($query) use ($sortRequest, $sortDirection) {
-                        $query->orderBy($this->columnCommands[$sortRequest], $sortDirection);
-                    }])->paginate(6);
-                }
-            } catch (Exception $e) {
-                $recentOrders = Order::with(['items' => function ($query) use ($sortRequest, $sortDirection) {
-                    $query->orderBy($this->columnCommands[$sortRequest], $sortDirection);
-                }])->paginate(6);
-            }
-        }
+    //     if ($sortRequest == null || !in_array($sortRequest, array_keys($this->columnCommands))) {
+    //         // Default sorting
+    //         $recentOrders = Order::with(['items' => function ($query) {
+    //             $query->orderBy($this->columnCommands['waktu_order'], 'desc');
+    //         }])->paginate(6);
+    //     } else {
+    //         try {
+    //             if ($sortRequest == 'kuantitas') {
+    //                 $recentOrders = Order::with(['items'])
+    //                     ->select('orders.*', \DB::raw('SUM(order_items.quantity) as total_quantity'))
+    //                     ->join('order_items', 'orders.id', '=', 'order_items.order_id')
+    //                     ->groupBy('orders.id')
+    //                     ->orderBy('total_quantity', $sortDirection)
+    //                     ->paginate(6);
+    //             } else if ($sortRequest == 'status') {
+    //                 $recentOrders = Order::with(['items'])
+    //                     ->orderBy($this->columnCommands[$sortRequest], $sortDirection)
+    //                     ->paginate(6);
+    //             } else {
+    //                 $recentOrders = Order::with(['items' => function ($query) use ($sortRequest, $sortDirection) {
+    //                     $query->orderBy($this->columnCommands[$sortRequest], $sortDirection);
+    //                 }])->paginate(6);
+    //             }
+    //         } catch (Exception $e) {
+    //             $recentOrders = Order::with(['items' => function ($query) use ($sortRequest, $sortDirection) {
+    //                 $query->orderBy($this->columnCommands[$sortRequest], $sortDirection);
+    //             }])->paginate(6);
+    //         }
+    //     }
 
-        $productCount = Product::count();
-        $userCount = User::count();
-        $orderCount = Order::count();
-        $netSales = Order::where('status', 'selesai')->sum('total_price');
+    //     $productCount = Product::count();
+    //     $userCount = User::count();
+    //     $orderCount = Order::count();
+    //     $netSales = Order::where('status', 'selesai')->sum('total_price');
 
-        // Charting
-        $months = [];
-        $chartData = [];
+    //     // Charting
+    //     $months = [];
+    //     $chartData = [];
 
-        // Loop through the last 12 months
-        for ($i = 0; $i < 12; $i++) {
-            $month = Carbon::now()->subMonths($i)->format('Y-m');
-            $months[] = $month;
+    //     // Loop through the last 12 months
+    //     for ($i = 0; $i < 12; $i++) {
+    //         $month = Carbon::now()->subMonths($i)->format('Y-m');
+    //         $months[] = $month;
 
-            if ($chartType == 'status') {
-                $statuses = ['pending', 'diproses', 'dalam perjalanan', 'selesai', 'canceled'];
-                foreach ($statuses as $status) {
-                    $chartData[$status][] = Order::where('status', $status)
-                        ->whereYear('created_at', Carbon::now()->subMonths($i)->year)
-                        ->whereMonth('created_at', Carbon::now()->subMonths($i)->month)
-                        ->count();
-                }
-            } else if ($chartType == 'sales') {
-                $chartData['selesai'][] = Order::where('status', 'selesai')
-                    ->whereYear('created_at', Carbon::now()->subMonths($i)->year)
-                    ->whereMonth('created_at', Carbon::now()->subMonths($i)->month)
-                    ->withSum('items', 'quantity')
-                    ->get()
-                    ->sum('items_sum_quantity');
-            }
-        }
+    //         if ($chartType == 'status') {
+    //             $statuses = ['pending', 'diproses', 'dalam perjalanan', 'selesai', 'canceled'];
+    //             foreach ($statuses as $status) {
+    //                 $chartData[$status][] = Order::where('status', $status)
+    //                     ->whereYear('created_at', Carbon::now()->subMonths($i)->year)
+    //                     ->whereMonth('created_at', Carbon::now()->subMonths($i)->month)
+    //                     ->count();
+    //             }
+    //         } else if ($chartType == 'sales') {
+    //             $chartData['selesai'][] = Order::where('status', 'selesai')
+    //                 ->whereYear('created_at', Carbon::now()->subMonths($i)->year)
+    //                 ->whereMonth('created_at', Carbon::now()->subMonths($i)->month)
+    //                 ->withSum('items', 'quantity')
+    //                 ->get()
+    //                 ->sum('items_sum_quantity');
+    //         }
+    //     }
 
-        // Reverse arrays for correct chronological order
-        $months = array_reverse($months);
-        foreach ($chartData as $key => $data) {
-            $chartData[$key] = array_reverse($data);
-        }
+    //     // Reverse arrays for correct chronological order
+    //     $months = array_reverse($months);
+    //     foreach ($chartData as $key => $data) {
+    //         $chartData[$key] = array_reverse($data);
+    //     }
 
-        if ($chartType == 'status') {
-            $chart = (new LarapexChart)->barChart()
-                ->setTitle('Kuantitas Penjualan')
-                ->setSubtitle('Berdasarkan status pesanan')
-                ->setXAxis($months)
-                ->setGrid()
-                ->setMarkers($colors = ['#000000'])
-                ->setFontFamily("Figtree")
-                ->setDataset(array_map(function ($key, $data) {
-                    return ['name' => ucfirst($key), 'data' => $data];
-                }, array_keys($chartData), $chartData));
-        } else if ($chartType == 'sales') {
-            $chart = (new LarapexChart)->lineChart()
-                ->setTitle('Produk Terjual')
-                ->setSubtitle('Berdasarkan Produk Terjual')
-                ->setXAxis($months)
-                ->setGrid()
-                ->setMarkers($colors = ['#000000'])
-                ->setFontFamily("Figtree")
-                ->setDataset([
-                    [
-                        'name' => 'Terjual',
-                        'data' => $chartData['selesai']
-                    ]
-                ]);
-        }
+    //     if ($chartType == 'status') {
+    //         $chart = (new LarapexChart)->barChart()
+    //             ->setTitle('Kuantitas Penjualan')
+    //             ->setSubtitle('Berdasarkan status pesanan')
+    //             ->setXAxis($months)
+    //             ->setGrid()
+    //             ->setMarkers($colors = ['#000000'])
+    //             ->setFontFamily("Figtree")
+    //             ->setDataset(array_map(function ($key, $data) {
+    //                 return ['name' => ucfirst($key), 'data' => $data];
+    //             }, array_keys($chartData), $chartData));
+    //     } else if ($chartType == 'sales') {
+    //         $chart = (new LarapexChart)->lineChart()
+    //             ->setTitle('Produk Terjual')
+    //             ->setSubtitle('Berdasarkan Produk Terjual')
+    //             ->setXAxis($months)
+    //             ->setGrid()
+    //             ->setMarkers($colors = ['#000000'])
+    //             ->setFontFamily("Figtree")
+    //             ->setDataset([
+    //                 [
+    //                     'name' => 'Terjual',
+    //                     'data' => $chartData['selesai']
+    //                 ]
+    //             ]);
+    //     }
 
-        return view('admin.dashboard', compact('product', 'user', 'recentOrders', 'productCount', 'userCount', 'orderCount', 'netSales', 'chart', 'months', 'chartData'));
-    }
+    //     return view('admin.dashboard', compact('product', 'user', 'recentOrders', 'productCount', 'userCount', 'orderCount', 'netSales', 'chart', 'months', 'chartData'));
+    // }
 
     // Orders
     public function showOrders($id)
