@@ -8,8 +8,8 @@ export default defineConfig({
             refresh: true,
         }),
     ],
-    build: {
-        outDir: "public", // Specify the output directory
-        assetsDir: ".", // Specify assets directory relative to outDir
-    },
+    // build: {
+    //     outDir: "public", // Specify the output directory
+    //     assetsDir: ".", // Specify assets directory relative to outDir
+    // },
 });
